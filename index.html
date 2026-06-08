@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>澳洲运营地图分析</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="ops-shell">
+      <aside class="sidebar">
+        <div class="side-head">
+          <button class="menu-btn" title="菜单">☰</button>
+          <div>
+            <h1>澳洲运营地图分析</h1>
+            <p>站点派送范围分析</p>
+          </div>
+        </div>
+
+        <section class="side-section">
+          <h2>数据上传</h2>
+          <label class="upload-box" for="fileInput">
+            <span class="excel-icon">X</span>
+            <strong>上传 Excel 文件</strong>
+            <small>支持 .xlsx / .xls / .csv 格式</small>
+            <button type="button">选择文件</button>
+            <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
+          </label>
+          <div class="file-chip" id="fileChip">
+            <span>✓</span>
+            <div>
+              <strong>CSP3测试数据.xlsx</strong>
+              <small>100 行，106 列</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="side-section">
+          <h2>站点选择</h2>
+          <select id="cspFilter"></select>
+        </section>
+
+        <section class="side-section">
+          <h2>站点取件地址</h2>
+          <div class="address-editor">
+            <input id="warehouseAddressInput" type="text" value="66 Ricketts Road, Mount Waverley VIC 3149" />
+            <button id="warehouseApplyBtn" type="button">更新位置</button>
+            <small id="warehouseStatus">默认站点：MEL CSP3</small>
+          </div>
+        </section>
+
+        <section class="side-section">
+          <h2>路由码筛选</h2>
+          <select id="routeFilter"></select>
+          <div class="check-list" id="routeChecks"></div>
+        </section>
+
+        <section class="side-section">
+          <h2>派件司机筛选</h2>
+          <select id="driverFilter"></select>
+        </section>
+
+        <section class="side-section">
+          <h2>邮编筛选</h2>
+          <select id="postcodeFilter"></select>
+        </section>
+
+        <section class="side-section">
+          <h2>地图图层</h2>
+          <label class="layer-row"><span>派送范围</span><input id="coverageToggle" type="checkbox" checked /></label>
+          <label class="layer-row"><span>站点取件位置</span><input id="warehouseToggle" type="checkbox" checked /></label>
+          <label class="layer-row"><span>首单连线</span><input id="lineToggle" type="checkbox" checked /></label>
+          <label class="layer-row"><span>问题件高亮</span><input id="issueToggle" type="checkbox" checked /></label>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h2 id="viewTitle">站点派送范围分析</h2>
+            <p id="viewSubtitle">数据更新时间：2026-06-03 16:45</p>
+          </div>
+          <div class="top-actions">
+            <span class="date-pill">2025-05-27 ~ 2026-06-03</span>
+            <button id="refreshBtn" type="button">刷新数据</button>
+            <span class="admin-dot">admin</span>
+          </div>
+        </header>
+
+        <section class="map-card">
+          <div class="map-legend" id="mapLegend"></div>
+          <div id="map"></div>
+        </section>
+
+        <section class="table-card">
+          <div class="table-card-head">
+            <h3>路由概览</h3>
+            <button id="exportRouteBtn" type="button">导出 Excel</button>
+          </div>
+          <div class="route-table-wrap">
+            <table class="route-table">
+              <thead>
+                <tr>
+                  <th>路由码</th>
+                  <th>运单数</th>
+                  <th>覆盖邮编</th>
+                  <th>司机数</th>
+                  <th>平均距站点(km)</th>
+                  <th>最远距站点(km)</th>
+                  <th>首单距离(km)</th>
+                  <th>公寓地址占比</th>
+                  <th>签收率</th>
+                  <th>难度评分</th>
+                  <th>难度等级</th>
+                </tr>
+              </thead>
+              <tbody id="routeTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <aside class="analytics">
+        <section class="metric-panel">
+          <h2 id="metricTitle">核心指标（MELCSP3）</h2>
+          <div class="kpi-grid" id="kpiGrid"></div>
+        </section>
+
+        <section class="metric-panel hero-metric">
+          <h2>首单距离（站点 → 首单）</h2>
+          <div class="hero-value"><span id="firstDistance">-</span><small>km</small></div>
+          <p id="firstAddress">首单地址：-</p>
+        </section>
+
+        <section class="metric-panel difficulty-panel">
+          <h2>派送难易度评分（综合）</h2>
+          <div class="difficulty-row">
+            <div>
+              <strong id="difficultyScore">0</strong><span>/ 100</span>
+              <p>难度等级：<b id="difficultyLabel">待计算</b></p>
+            </div>
+            <em id="difficultyBadge">待计算</em>
+          </div>
+          <div class="difficulty-bar"><i id="difficultyBar"></i></div>
+          <p id="difficultyReason"></p>
+        </section>
+
+        <section class="metric-panel note-panel">
+          <h2>说明</h2>
+          <p>首单距离：站点取件位置到当日最早签收地址的距离。</p>
+          <p>平均距离：站点取件位置到所有派送地址的平均距离。</p>
+          <p>公寓地址：识别 unit、apt、apartment、flat、level、suite、#、1/23、1\23 等地址形态。</p>
+          <p>难度综合考虑距离、分散度、问题件、二派、公寓地址、大件重货。</p>
+        </section>
+      </aside>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

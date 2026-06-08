@@ -1,8 +1,8 @@
 const WAREHOUSE = {
-  name: "66 Ricketts Road",
-  address: "Mount Waverley VIC 3149",
-  lat: -37.8959,
-  lng: 145.1386,
+  name: "墨尔本火车站",
+  address: "Flinders Street Station, Melbourne VIC 3000",
+  lat: -37.8183,
+  lng: 144.9671,
 };
 
 const ROUTE_COLORS = {
